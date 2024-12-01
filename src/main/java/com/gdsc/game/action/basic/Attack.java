@@ -1,6 +1,5 @@
 package com.gdsc.game.action.basic;
 
-import com.gdsc.game.manager.ActionResult;
 import com.gdsc.game.player.Player;
 
 import java.util.Random;
@@ -25,8 +24,7 @@ public class Attack implements BasicAction{
     }
 
     @Override
-    public ActionResult execute(Player user, Player target) {
-        int damage = getRandomDamage();
-        return new ActionResult("Attack", damage, user.getName() + " 의 " + target.getName() + " 공격! 데미지는 " + damage + "!");
+    public int execute(Player user, Player target) {
+        return getRandomDamage();
     }
 }

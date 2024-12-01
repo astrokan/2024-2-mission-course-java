@@ -1,6 +1,5 @@
 package com.gdsc.game.action.basic;
 
-import com.gdsc.game.manager.ActionResult;
 import com.gdsc.game.player.Player;
 
 import java.util.Random;
@@ -25,8 +24,8 @@ public class Defense implements BasicAction {
     }
 
     @Override
-    public ActionResult execute(Player user, Player target) { // actionresult 반환 시 defense 값은 음수로 취해 보냄.
+    public int execute(Player user, Player target) { // actionresult 반환 시 defense 값은 음수로 취해 보냄.
         int defense = getRandomDamage();
-        return new ActionResult("Defense", -defense, user.getName() + "의 방어 선택! 방어 가능 데미지는 " + defense + "입니다.");
+        return defense;
     }
 }

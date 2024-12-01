@@ -1,10 +1,10 @@
 package com.gdsc.game.action.skill;
 
 import com.gdsc.game.action.Action;
-import com.gdsc.game.manager.ActionResult;
 import com.gdsc.game.player.Player;
 
 import java.util.Random;
+
 
 public class Skill implements Action {
     private static final int MIN_DAMAGE = 1;
@@ -37,10 +37,10 @@ public class Skill implements Action {
     }
 
     @Override
-    public ActionResult execute(Player user, Player target) {
+    public int execute(Player user, Player target) {
         int damage = getSkillDamage();
         user.consumeMp(mpCost);
-        return new ActionResult("Attack", damage, user.getName() + "이(가) " + target.getName() + " 에게 스킬 공격! 데미지는 " + damage + "!");
+        return damage;
     }
 
 }
