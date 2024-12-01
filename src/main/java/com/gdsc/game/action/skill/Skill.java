@@ -12,19 +12,18 @@ public class Skill implements Action {
     private String name;
     private int mpCost;
     private int coolDownTurns;
-    private int damage;
 
-    public int getMaxDamage() {return MAX_DAMAGE;}
-    public int getMinDamage() {return MIN_DAMAGE;}
+    public int getMaxDamage() {return mpCost*MAX_DAMAGE;}
+    public int getMinDamage() {return mpCost*MIN_DAMAGE;}
     public int getMpCost() { return mpCost; }
 
     public Skill(String name, int mpCost, int coolDownTurns) {
         this.name = name;
         this.mpCost = mpCost;
         this.coolDownTurns = coolDownTurns;
-        this.damage = calculateSkillDamage(mpCost);
     }
-    private int calculateSkillDamage(int mpCost) {
+
+    public int getSkillDamage() {
         int baseDamage = new Random().nextInt(MAX_DAMAGE- MIN_DAMAGE + 1) + MIN_DAMAGE; // 기본 1~10 데미지
         return baseDamage * mpCost;
     }
@@ -37,10 +36,9 @@ public class Skill implements Action {
         return coolDownTurns;
     }
 
-
-
     @Override
     public ActionResult execute(Player user, Player target) {
+        int damage = getSkillDamage();
         user.consumeMp(mpCost);
         return new ActionResult("Attack", damage, user.getName() + "이(가) " + target.getName() + " 에게 스킬 공격! 데미지는 " + damage + "!");
     }

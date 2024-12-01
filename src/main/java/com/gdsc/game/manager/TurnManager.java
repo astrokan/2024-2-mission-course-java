@@ -157,8 +157,8 @@ public class TurnManager {
             }
             else if (action instanceof Skill) {
                 Skill skill = (Skill) action;
-                System.out.println(i + ". " + skill.getName() + "(" + skill.getMpCost()*skill.getMinDamage()
-                        + " ~ " + skill.getMpCost()*skill.getMaxDamage() + ")" + " - " + skill.getMpCost() + "MP - "
+                System.out.println(i + ". " + skill.getName() + "(" + skill.getMinDamage()
+                        + " ~ " + skill.getMaxDamage() + ")" + " - " + skill.getMpCost() + "MP - "
                         + player.getSkillCooldowns().get(skill.getName()) + "턴");
             }
             i++;
