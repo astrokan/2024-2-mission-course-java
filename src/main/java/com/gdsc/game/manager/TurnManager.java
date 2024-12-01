@@ -139,8 +139,8 @@ public class TurnManager {
         player1.applyDamage(damageToPlayer1);
         player2.applyDamage(damageToPlayer2);
         // 결과 메시지 출력
-        System.out.println(player1.getName()  + ": " + result1.getMessage());
-        System.out.println(player2.getName()  + ": " + result2.getMessage());
+        printResultMessage(player1, result1);
+        printResultMessage(player2, result2);
     }
     public void printPlayerState(Player player1, Player player2) {
         String player1State = player1.getName() + " 체력: " + player1.getHp() + ", 마나: " + player1.getMp();
@@ -163,5 +163,9 @@ public class TurnManager {
             }
             i++;
         }
+    }
+
+    private void printResultMessage(Player player, ActionResult result) {
+        System.out.println(player.getName()  + ": " + result.getMessage());
     }
 }
