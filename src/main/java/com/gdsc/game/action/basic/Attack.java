@@ -14,6 +14,10 @@ public class Attack implements BasicAction{
         this.name = name;
     }
 
+    public int getMaxDamage() {return MAX_DAMAGE;}
+    public int getMinDamage() {return MIN_DAMAGE;}
+
+
     @Override
     public String getName() {return name;}
     public int getRandomDamage() {
@@ -25,7 +29,4 @@ public class Attack implements BasicAction{
         int damage = getRandomDamage();
         return new ActionResult("Attack", damage, user.getName() + " 의 " + target.getName() + " 공격! 데미지는 " + damage + "!");
     }
-
-    public int getMaxDamage() {return MAX_DAMAGE;}
-    public int getMinDamage() {return MIN_DAMAGE;}
 }

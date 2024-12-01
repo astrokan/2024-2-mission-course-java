@@ -14,6 +14,9 @@ public class Defense implements BasicAction {
         this.name = name;
     }
 
+    public int getMaxDamage() {return MAX_DAMAGE;}
+    public int getMinDamage() {return MIN_DAMAGE;}
+
     @Override
     public String getName() {return name;}
 
@@ -26,7 +29,4 @@ public class Defense implements BasicAction {
         int defense = getRandomDamage();
         return new ActionResult("Defense", -defense, user.getName() + "의 방어 선택! 방어 가능 데미지는 " + defense + "입니다.");
     }
-
-    public int getMaxDamage() {return MAX_DAMAGE;}
-    public int getMinDamage() {return MIN_DAMAGE;}
 }
