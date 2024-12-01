@@ -34,14 +34,10 @@ public class Application {
         List<Skill> skills = new ArrayList<>(List.of(doubleSlice, tripleSlice, CriticalHit));
 
         Player player1 = new Player(playerNames[0], actions, skills);
-        player1.getSkillCooldowns().put(doubleSlice.getName(), 0);
-        player1.getSkillCooldowns().put(tripleSlice.getName(), 0);
-        player1.getSkillCooldowns().put(CriticalHit.getName(), 0);
+        registerSkillCooldowns(player1, skills);
 
         Player player2 = new Player(playerNames[1], actions, skills);
-        player2.getSkillCooldowns().put(doubleSlice.getName(), 0);
-        player2.getSkillCooldowns().put(tripleSlice.getName(), 0);
-        player2.getSkillCooldowns().put(CriticalHit.getName(), 0);
+        registerSkillCooldowns(player2, skills);
 
         TurnManager turnManager = new TurnManager(scanner);
         // 턴제 게임 시작
@@ -49,6 +45,11 @@ public class Application {
 
         scanner.close();
 
+    }
+    private static void registerSkillCooldowns(Player player, List<Skill> skills) {
+        for (Skill skill : skills) {
+            player.getSkillCooldowns().put(skill.getName(), 0);
+        }
     }
 
     public String[] inputTwoPlayerName() {
