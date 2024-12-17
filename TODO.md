@@ -263,8 +263,6 @@ getter setter 메서드 최소화
 - 전체적인 객체 설계는 interface
 - 구현하면서 중복되는 코드는 abstract
 
-### getDamage()
-
 ## _구현 기능_
 
 
