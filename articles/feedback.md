@@ -3,25 +3,6 @@
 공통적으로 한번 고민해보면 좋을 거 같은 키워드를 같이 알아보아요.
 (추가로 3주차까지 계속 사용할 코드이기 때문에 리팩토링 해보는 것도 괜찮을거 같네요!)
 
-## 불변성(NOT DONE)
-불변성은 코드의 버그를 줄일 뿐만 아니라, 개발자가 코드를 편하게 짜게 도와줘요.  
-
-예시와 함께 알아볼께요.
-```java
-    public class Character {
-        // ...
-        private List<Skill> skills;
-    }
-    
-    public class Skill {
-        private int min;
-        private int max;
-        private String name;
-        // ...
-    }
-```
-
-
 ## interface
 인터페이스를 객체의 협력 관계를 나타낼 수 있는 좋은 수단이라고 소개했어요.  
 간단하게 캐릭터와 스킬 객체 간의 관계로 생각해볼께요.  
