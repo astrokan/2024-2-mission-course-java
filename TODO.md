@@ -264,7 +264,6 @@ getter setter 메서드 최소화
 - 구현하면서 중복되는 코드는 abstract
 
 ### getDamage()
-방어일 때 getDamage()가 음수를 가져온다는 것을 알고 보아도 데미지가 더해진다는 느낌을 덜어냄
 
 ## _구현 기능_
 
