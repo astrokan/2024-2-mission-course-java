@@ -1,30 +1,27 @@
 package com.gdsc.game.player;
 
-import lombok.NoArgsConstructor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-@NoArgsConstructor
 public class PlayerRepository {
-    private final List<Player> players = new ArrayList<>();
+
+    @PersistenceContext
+    private EntityManager em;
 
     public void save(Player player) {
-        players.add(player);
+        em.persist(player);
     }
 
     public List<Player> findAll() {
-        return players;
+        return em.createQuery("select t from Player as t", Player.class)
+                .getResultList();
     }
 
-    public Player findOneByName(String name) {
-        for (Player player : players) {
-            if (player.getName().equals(name)) {
-                return player;
-            }
-        }
-        return null;
+    public Player findByName(String playerName) {
+        return em.find(Player.class, playerName);
     }
 }

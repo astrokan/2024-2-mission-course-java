@@ -1,68 +1,124 @@
 package com.gdsc.game.player;
 
+import com.gdsc.game.action.Action;
+import com.gdsc.game.action.basic.Attack;
+import com.gdsc.game.action.basic.BasicAction;
+import com.gdsc.game.action.basic.Defense;
 import com.gdsc.game.action.skill.Skill;
-import com.gdsc.game.manager.TurnService;
-import jakarta.annotation.PostConstruct;
+import com.gdsc.game.common.exception.JobNotFoundException;
+import com.gdsc.game.job.Job;
+import com.gdsc.game.job.JobRepository;
+import com.gdsc.game.player.skillcooldown.SkillCooldown;
+import com.gdsc.game.player.skillcooldown.SkillCooldownRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
-    private final TurnService turnService;
+    private final JobRepository jobRepository;
+    private final SkillCooldownRepository skillCooldownRepository;
 
-    public PlayerService(@Lazy PlayerRepository playerRepository, @Lazy TurnService turnService) {
-        this.playerRepository = playerRepository;
-        this.turnService = turnService;
-    }
-    @PostConstruct
-    public void createPlayerSet() {
-        String[] playerNames = {"a", "b"}; // name 세팅
+    @Transactional
+    public String createPlayer(String playerName, String jobName, int level) {
 
-        Skill doubleSlice = new Skill("두 번 베기", 2, 2);
-        Skill tripleSlice = new Skill("세 번 베기", 3, 2);
-        Skill CriticalHit = new Skill("세게 때리기", 5, 3);
-        List<Skill> skills = new ArrayList<>(List.of(doubleSlice, tripleSlice, CriticalHit));
+        Job job = jobRepository.findByName(jobName);
+        if (job == null) {
+            throw new JobNotFoundException("job not found");
+        }
 
-        Player player1 = new Player(playerNames[0]);
-        Player player2 = new Player(playerNames[1]);
-
-        player1.setSkillCooldowns(skills);
-        player2.setSkillCooldowns(skills);
-
-        registerPlayer(player1);
-        registerPlayer(player2);
-    }
-
-    private void registerPlayer(Player player) {
+        Player player = new Player(playerName, job, level);
         playerRepository.save(player);
+
+        // 플레이어의 고유 스킬 쿨타임 초기화
+        List<Skill> skills = job.getSkills();
+        for (Skill skill : skills) {
+            SkillCooldown skillCooldown = new SkillCooldown(player, skill);
+            skillCooldownRepository.save(skillCooldown);
+        }
+        return player.getName();
     }
 
-    public String printPlayerState() {
+    @Transactional
+    public String printPlayersState() {
         List<Player> players = playerRepository.findAll();
+
         Player player1 = players.get(0);
         Player player2 = players.get(1);
-        String player1State = player1.getName() + " 체력: " + player1.getHp() + ", 마나: " + player1.getMp()
-                + "\n남은 쿨타임: " + player1.getSkillCooldowns() + " 남은 턴수: " +  (turnService.getMaxTurns() - player1.getTurn() + 1);
-        String player2State = player2.getName() + " 체력: " + player2.getHp() + ", 마나: " + player2.getMp()
-                + "\n남은 쿨타임: " + player2.getSkillCooldowns() + " 남은 턴수: " +  (turnService.getMaxTurns() - player2.getTurn() + 1);
+        String player1State = player1.printState();
+        String player2State = player2.printState();
+
         return player1State + "\n\n" + player2State;
     }
-    public String printPlayerState(String playerName) {
-        Player player = playerRepository.findOneByName(playerName);
-        return player.getName() + " 체력: " + player.getHp() + ", 마나: " + player.getMp()
-                + "\n\n남은 쿨타임: " + player.getSkillCooldowns() + " 은 턴수: " +  (turnService.getMaxTurns() - player.getTurn() + 1);
+
+    @Transactional
+    public String printActionList(String playerName) {
+        // 쿨타임 스캔
+        Player player = playerRepository.findByName(playerName);
+        List<Action> actions = createActionList(playerName);
+
+        int i=1;
+        for (Action action : actions) {
+            if (action instanceof BasicAction) {
+                BasicAction basicAction = (BasicAction) action;
+                return (i + ". " + basicAction.getName() + "(" + basicAction.getMinDamage()
+                        + " ~ " + basicAction.getMaxDamage() + ")");
+            }
+            else if (action instanceof Skill) {
+                Skill skill = (Skill) action;
+                SkillCooldown skillCooldown = skillCooldownRepository.findOneByPlayerAndSkill(player, skill);
+                return (i + ". " + skill.getName() + "(" + skill.getMinDamage()
+                        + " ~ " + skill.getMaxDamage() + ")" + " - " + skill.getMpCost() + "MP - 남은 쿨타임: "
+                        + skillCooldown.getRemainingCooldown() + "턴");
+            }
+            i++;
+        }
+        return null;
     }
 
-    public List<Player> getPlayers () {
-        return playerRepository.findAll();
+    @Transactional
+    public List<Action> createActionList(String playerName) {
+        List<Action> actions = new ArrayList<>();
+        Player player = playerRepository.findByName(playerName);
+        Job job = jobRepository.findByName(player.getJob().getName());
+
+        Attack attack = new Attack("공격");
+        Defense defense = new Defense("방어");
+        actions.add(attack);
+        actions.add(defense);
+
+        List<Skill> skills = job.getSkills();
+        for (Skill skill : skills) {
+            actions.add(skill);
+        }
+        return actions;
     }
-    public Player getPlayer (String playerName) {
-        return playerRepository.findOneByName(playerName);
+
+    @Transactional
+    public List<Action> createActionList(Player player) {
+        List<Action> actions = new ArrayList<>();
+        Job job = jobRepository.findByName(player.getJob().getName());
+
+        Attack attack = new Attack("공격");
+        Defense defense = new Defense("방어");
+        actions.add(attack);
+        actions.add(defense);
+
+        List<Skill> skills = job.getSkills();
+        for (Skill skill : skills) {
+            actions.add(skill);
+        }
+        return actions;
+    }
+
+    @Transactional
+    public List<Player> getPlayers() {
+        return playerRepository.findAll();
     }
 }
