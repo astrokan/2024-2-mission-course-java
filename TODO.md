@@ -245,28 +245,226 @@ action을 request로 보냄으로써 한 플레이어의 한 턴이 시작되는
 3. action 패키지
 - 모든 행동에 관한 내용을 담았다.
 - 엔티티, 레포지토리, 서비스 계층을 구현하였다.
-- 레포지토리 계층에 두 플레이어가 공유할 행
+- 레포지토리 계층에 두 플레이어가 공유할 행동 리스트를 담았다.
 
 ---
 # 3주차
-## 수정 사항
+## 리팩토링 시 유의 사항
 ### interface
-interface : only for 다른 객체로부터 요청받은 책임 나열
+interface : only for 다른 객체로부터 요청받은 책임을 나열
 
 따라서 객체 내부에서의 작업은 interface 내부에 포함할 필요가 없음.
 
 ### getter, setter 정리
 a의 책임을 b에서 지고 있지 않은지 검토 및 수정
-getter setter 메서드 최소화
+(getter setter 메서드 최소화)
 
 ### abstract vs. interface
 - 전체적인 객체 설계는 interface
 - 구현하면서 중복되는 코드는 abstract
 
-## _구현 기능_
+## code review 반영 리팩토링
+### ActionResult: getDamage()
+1주차 미션에서 플레이어가 공격을 선택한 경우, `ActionResult` 인스턴스의 `damage` 필드에 양수 데미지,
+방어를 선택한 경우 음수 데미지를 저장하도록 했었다.  
+아래 코드는 2주차 미션 코드 중,
+ActionResult 데이터를 활용하여 양측 플레이어에게 데미지를 적용하는 `TurnService.java`의 `processResult` 함수이다.  
+*(참고: 1주차 ActionResult 속 damage는 2주차에서 damage 매개변수로 전달하도록 하고, ActionResult 클래스는 삭제하여 리팩토링하였다.)*
+```java
+    public void processResults(Player player1, int damage1, Player player2, int damage2) {
+        // 플레이어 1과 2의 선택을 각각 저장
+        boolean player1Attacking = damage1 >= 0;
+        boolean player2Attacking = damage2 >= 0;
+
+        int damageToPlayer1; // 플레이어2가 플레이어1에게 주는 데미지
+        int damageToPlayer2; // 플레이어1이 플레이어2에게 주는 데미지
+
+        if (player1Attacking) {
+            if (player2Attacking) { // 둘 다 공격
+                damageToPlayer1 = damage2;
+                damageToPlayer2 = damage1;
+            }
+            else {  // 1 공격, 2 방어
+                damageToPlayer1 = 0;
+                damageToPlayer2 = Math.max(0, damage1 + damage2); // 방어구 + 데미지
+            }
+        }
+        else {
+            if (player2Attacking) { // 1 방어, 2 공격
+                damageToPlayer1 = Math.max(0, damage2 + damage1);
+                damageToPlayer2 = 0;
+            }
+            else { // 1 방어, 2 방어
+                damageToPlayer1 = 0;
+                damageToPlayer2 = 0;
+            }
+        }
+     // 데미지 적용
+        player1.applyDamage(damageToPlayer1);
+        player2.applyDamage(damageToPlayer2);
+
+        currentTurn++; // 턴 종료
+    }
+```
+방어 행위를 적용하는 공격 데미지 계산 시, 방어 데미지만큼 '-' 연산을 적용하는 것이 자연스러움에도, 앞의 설계에 따라 '+' 연산을 사용하게 되어 코드 가독성이 떨어지는 문제가 있었다.  
+이번 미션에서는 방어 데미지(음수 값)에 abs메서드를 활용함으로써, 공격 데미지를 방어 데미지만큼 차감하는 **'-'의 시각화** 를 유도하였다.
+
+```java
+// (MatchService.java)- processResults 메서드의 일부
+private void processResults(Player player1, int damage1, Player player2, int damage2, Match match) {
+        Map<String, Integer> damageMap = match.getDamageMap();
+
+        // 플레이어 1과 2의 선택을 각각 저장
+        boolean player1Attacking = damage1 >= 0; // 양수면 공격 데미지, 음수면 방어 데미지
+        boolean player2Attacking = damage2 >= 0;
+        int damageToPlayer1; // 플레이어2가 플레이어1에게 주는 데미지
+        int damageToPlayer2; // 플레이어1이 플레이어2에게 주는 데미지
+
+        if (player1Attacking) {
+            if (player2Attacking) { // 플레이어 1: 공격, 플레이어 2: 공격
+                damageToPlayer1 = damage2;
+                damageToPlayer2 = damage1;
+                System.out.println("플레이어 1: 공격, 플레이어 2: 공격");
+            }
+            else {  // 플레이어 1: 공격, 플레이어 2: 방어
+                damageToPlayer1 = 0;
+                damageToPlayer2 = Math.max(0, damage1 - abs(damage2)); // 공격 데미지 - 방어 데미지
+                System.out.println("플레이어 1: 공격, 플레이어 2: 방어");
+            }
+        }
+        else {
+            if (player2Attacking) { // 플레이어 1: 방어, 플레이어 2: 공격
+                damageToPlayer1 = Math.max(0, damage2 - abs(damage1)); // 공격 데미지 - 방어 데미지
+                damageToPlayer2 = 0;
+                System.out.println("플레이어 1: 방어, 플레이어 2: 공격");
+            }
+            else { // 플레이어 1: 방어, 플레이어 2: 방어
+                damageToPlayer1 = 0;
+                damageToPlayer2 = 0;
+                System.out.println("플레이어 1: 방어, 플레이어 2: 방어");
+            }
+        }
+        // 데미지 적용
+        player1.applyDamage(damageToPlayer1);
+        player2.applyDamage(damageToPlayer2);
+        damageMap.clear(); // 두 플레이어의 행동을 저장했던 data 삭제
+    }
+```
+## _3주차 명세 구현_
+
+### h2-database, JPA 활용
+#### application.properties 파일
+```properties
+spring.application.name=2024-2-mission-course-java
+
+server.port=8080
+
+spring.datasource.url=jdbc:h2:file:~/game_db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+spring.h2.console.enabled=true
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+
+spring.jpa.hibernate.ddl-auto=create
+```
+
+#### build.gradle 파일 - dependencies
+```
+dependencies {
+testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+implementation 'org.springframework.boot:spring-boot-starter-web'
+implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+testImplementation 'org.springframework.boot:spring-boot-starter-test'
+implementation 'org.springframework.boot:spring-boot-starter-validation'
+compileOnly 'org.projectlombok:lombok'
+developmentOnly 'org.springframework.boot:spring-boot-devtools'
+annotationProcessor 'org.projectlombok:lombok'
+implementation 'com.h2database:h2'
+}
+
+```
+### Job 패키지 추가
+
+Job 엔티티, 레포지토리
+## _기존 코드 수정 사항_
+### ActionRepository 삭제, SkillRepository 추가
+- 이번 미션 명세에 따라 데이터 저장을 위한 Map, ArrayList 대신 h2-database, JPA를 활용하였다.  
+- 데이터 저장 공간으로 사용되던 ActionRepository를 삭제하였고, `Skill`클래스를 엔티티로 구현함과 동시에, 레포지토리 계층인 `SkillRepository를 추가하였다.
+
+### 예외 처리
+2주차 코드에서 예외 처리를 정교화하였다.  
+플레이어 생성 시, 존재하진 않는 직업을 입력받았을 때의 예외를 처리하기 위한 커스텀 예외(`JobNotFoundException`)를 활용하였다.
 
 
+### DTO 클래스 `StatusResponse` 삭제
+불필요해진 DTO 클래스 삭제
 
+### 유효성 검사
+플레이어 생성 시, 클라이언트에게 json 형태로 전달 받은 RequestBody 내용을 DTO 클래스(`PlayerCreateRequest`)를 거친 후 서비스 계층으로 전달한다.  
+이 때 `PlayerCreateRequest`에서 `@NotNull`, `@Length`와 같은 어노테이션을 활용하여 각 매개변수 별 유효성을 검증하게 된다.
 
+## _패키지 설명_
+### 1. Action 패키지
+공격, 방어, 스킬을 다루는 패키지이다.
+#### a. basic 패키지
+공격, 방어는 모든 플레이어가 가지는 행동 선택지이다.
+#### b. skill 패키지
+스킬은 쿨타임과 마나 소모가 동반되는 특수한 행동이다.
+엔티티, 레포지토리 계층을 포함한다.
 
+### 2. Exception 패키지
+커스텀 예외를 담고 있다.
 
+### 3. Match 패키지
+- 턴제 게임과 관련된 정보(현재 턴, 참여 중인 플레이어 정보...etc)를 저장하고, 게임을 진행하는 패키지이다.  
+- 엔티티, 레포지토리, 서비스, 컨트롤러 계층을 포함한다.  
+- DTO 클래스의 집합인 DTO 패키지를 포함한다.
+
+### 4. Player 패키지
+- 플레이어 정보를 관리하는 패키지이다.  
+- name hp, mp, job, level 정보를 저장한다.
+
+## _API 가이드_
+
+### 시작
+- 스킬, 서로 다른 스킬 집합을 가지는 직업, 플레이어 정보를 db에 사전 세팅한 후 게임을 진행한다.  
+- 단, 애플리케이션 실행 후에도 클라이언트가 플레이어를 추가할 수 있도록 한다.
+
+[h2-console에 sql문 입력 for 사전 세팅]
+```sql
+INSERT INTO job (job_name) VALUES ('기사');
+INSERT INTO job (job_name) VALUES ('마법사');
+INSERT INTO skill (skill_name, skill_mpcost, skill_cooldown, job_name) VALUES ('두 번 베기', 2, 2, '기사');
+INSERT INTO skill (skill_name, skill_mpcost, skill_cooldown, job_name) VALUES ('세 번 베기', 2, 3, '기사');
+INSERT INTO skill (skill_name, skill_mpcost, skill_cooldown, job_name) VALUES ('세게 때리기', 3, 5, '기사');
+INSERT INTO skill (skill_name, skill_mpcost, skill_cooldown, job_name) VALUES ('회오리', 1, 1, '마법사');
+INSERT INTO skill (skill_name, skill_mpcost, skill_cooldown, job_name) VALUES ('파이어볼', 6, 5, '마법사');
+```
+
+#### 1. POST /game/register
+- 새로운 플레이어를 등록한다.  
+- 지정된 형식을 지키지 않은 입력의 경우 400 Bad Request 에러를 반환한다.  
+- 존재하지 않는 직업을 골랐을 경우 404 Not Found 에러를 반환한다.
+
+#### 2. POST /game/start
+두 플레이어가 등록된 상태이고, 진행 중인 게임이 없다면, 새로운 게임을 세팅 후 진행한다. 
+
+#### 3. GET /game/status
+두 플레이어 상태를 보여준다.
+
+#### 4. GET /{playerName}/action 
+- playerName을 가진 플레이어의 행동 리스트를 보여준다.  
+- 행동 리스트를 참고하여 `/game/{playerName}/{actionIdx}`의 `actionIdx`에 행동 번호를 입력한다.
+
+#### 5. POST /game/{playerName}/{actionIdx}
+- playerName을 가진 플레이어가 actionIdx에 해당하는 행동을 개시한다.  
+- 행동은 공격, 방어, 스킬을 포함한다. 턴제로 진행되는 게임 규칙에 따라 하나의 턴이 종료될 때까지 행동을 저장한다.  
+- 후공 플레이어의 차례가 끝나면 두 플레이어의 행동을 게임 결과에 반영한다.
+
+#### 6. DELETE /game/reset
+게임을 리셋한다.
+플레이어 별 스킬 쿨타임을 초기화하고, 해당 턴제 게임을 삭제한다.

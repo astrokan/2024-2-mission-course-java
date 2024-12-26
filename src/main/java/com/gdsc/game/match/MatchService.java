@@ -114,7 +114,6 @@ public class TurnService {
         int damageToPlayer1; // 플레이어2가 플레이어1에게 주는 데미지
         int damageToPlayer2; // 플레이어1이 플레이어2에게 주는 데미지
 
-
         if (player1Attacking) {
             if (player2Attacking) { // 둘 다 공격
                 damageToPlayer1 = damage2;
