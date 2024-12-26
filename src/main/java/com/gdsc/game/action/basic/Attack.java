@@ -1,7 +1,5 @@
 package com.gdsc.game.action.basic;
 
-import com.gdsc.game.player.Player;
-
 import java.util.Random;
 
 public class Attack implements BasicAction{
@@ -16,15 +14,16 @@ public class Attack implements BasicAction{
     public int getMaxDamage() {return MAX_DAMAGE;}
     public int getMinDamage() {return MIN_DAMAGE;}
 
-
     @Override
     public String getName() {return name;}
+
     public int getRandomDamage() {
         return new Random().nextInt(MAX_DAMAGE - MIN_DAMAGE + 1) + MIN_DAMAGE;
     }
 
     @Override
-    public int execute(Player user, Player target) {
-        return getRandomDamage();
+    public int execute() {
+        int attack = getRandomDamage();
+        return attack;
     }
 }
