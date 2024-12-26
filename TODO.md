@@ -389,8 +389,8 @@ implementation 'com.h2database:h2'
 
 ```
 ### Job 패키지 추가
+Job 엔티티, 레포지토리 추가
 
-Job 엔티티, 레포지토리
 ## _기존 코드 수정 사항_
 ### ActionRepository 삭제, SkillRepository 추가
 - 이번 미션 명세에 따라 데이터 저장을 위한 Map, ArrayList 대신 h2-database, JPA를 활용하였다.  
